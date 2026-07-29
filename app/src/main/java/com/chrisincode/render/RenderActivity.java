@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
 import android.os.Message;
+import android.view.View;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JsPromptResult;
 import android.webkit.JsResult;
@@ -28,9 +29,13 @@ import java.util.Locale;
  * Renders exactly one URL — the one handed to us by another app — and refuses
  * everything else.
  *
- * <p>There is no address bar, no history, no tabs, no launcher entry. The only
- * way to get a page on screen is for something else to fire an ACTION_VIEW
- * intent at us. Once that page is up, it is a dead end: links do not work.
+ * <p>There is no address bar, no history and no tabs. The only way to get a page on
+ * screen is for something else to fire an ACTION_VIEW intent at us. Once that page
+ * is up, it is a dead end: links do not work.
+ *
+ * <p>The app does appear in the app list, because an invisible app is its own kind
+ * of confusing. Opening it that way shows a notice and nothing else — there is no
+ * field to type into.
  */
 public final class RenderActivity extends Activity {
 
@@ -38,12 +43,14 @@ public final class RenderActivity extends Activity {
     private static final String[] SUBRESOURCE_SCHEMES = {"http", "https", "data", "blob", "about"};
 
     private WebView webView;
+    private View notice;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_render);
 
+        notice = findViewById(R.id.notice);
         webView = findViewById(R.id.webview);
         harden(webView);
         webView.setWebViewClient(new DeadEndClient());
@@ -51,14 +58,14 @@ public final class RenderActivity extends Activity {
         webView.setDownloadListener(
                 (url, agent, disposition, mime, length) -> toast(R.string.blocked_download));
 
-        render(getIntent());
+        handleIntent(getIntent());
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        render(intent);
+        handleIntent(intent);
     }
 
     @Override
@@ -71,19 +78,36 @@ public final class RenderActivity extends Activity {
         super.onDestroy();
     }
 
-    /**
-     * Loads the intent's URL directly. Going through {@link WebView#loadUrl} here
-     * deliberately bypasses {@link DeadEndClient}: this one URL is the whole point,
-     * everything after it is not.
-     */
-    private void render(Intent intent) {
+    private void handleIntent(Intent intent) {
         Uri target = intent == null ? null : intent.getData();
-        if (!isWebUrl(target)) {
+
+        if (isWebUrl(target)) {
+            render(target);
+        } else if (intent != null && Intent.ACTION_VIEW.equals(intent.getAction())) {
+            // Something sent us a link we will not touch: a custom app scheme, a
+            // mailto:, a malformed URL.
             toast(R.string.blocked_scheme);
             finish();
-            return;
+        } else {
+            // Launched from the app list. There is no URL and no way to supply one.
+            showNotice();
         }
+    }
+
+    /**
+     * Loads the URL directly. Going through {@link WebView#loadUrl} here deliberately
+     * bypasses {@link DeadEndClient}: this one URL is the whole point, everything
+     * after it is not.
+     */
+    private void render(Uri target) {
+        notice.setVisibility(View.GONE);
+        webView.setVisibility(View.VISIBLE);
         webView.loadUrl(target.toString());
+    }
+
+    private void showNotice() {
+        webView.setVisibility(View.GONE);
+        notice.setVisibility(View.VISIBLE);
     }
 
     private static boolean isWebUrl(Uri uri) {

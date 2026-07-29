@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The launcher mark on its own background, for use on the notice screen. The
+    foreground vector's slash is near-white and its chevrons are mid-teal, both
+    chosen against the dark icon background — dropped straight onto the light-mode
+    page background the slash would disappear. Carrying the background along keeps
+    it legible in either theme, and it reads as the app's icon.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/ic_launcher_background" />
+            <corners android:radius="26dp" />
+        </shape>
+    </item>
+
+    <item android:drawable="@drawable/ic_launcher_foreground" />
+
+</layer-list>

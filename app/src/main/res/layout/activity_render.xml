@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    One WebView, edge to edge. No toolbar, no progress bar, no URL strip — so
-    there is no leftover band of empty space where an address bar would sit.
+    Two states, one of which is revealed in onCreate:
 
-    fitsSystemWindows keeps the page out from under the status bar without
-    reserving anything else.
+      webview  a link handed to us by another app
+      notice   opened from the app list, where there is nothing to render
+
+    No toolbar, no progress bar, no URL strip — so there is no leftover band of
+    empty space where an address bar would sit. fitsSystemWindows keeps content out
+    from under the status bar without reserving anything else.
+
+    Both start hidden so neither flashes before we know which one applies.
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root"
@@ -16,6 +21,43 @@
     <WebView
         android:id="@+id/webview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/notice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingHorizontal="36dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_marginBottom="28dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_mark_badge" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notice_title"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="21sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:lineSpacingMultiplier="1.25"
+            android:text="@string/notice_body"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="15sp" />
+
+    </LinearLayout>
 
 </FrameLayout>

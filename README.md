@@ -1,25 +1,40 @@
 # Minimal Web Renderer
 
-A WebView that renders one link and goes nowhere.
+A WebView that renders one page from a hyperlink, with no navigation.
 
 ## Why
 
-Uninstalling every browser breaks Android in an annoying way: links from SMS, QR
-codes, and share sheets fail with "could not find appropriate application."
+The goal is a phone with no access to algorithmic feeds, that still works when
+you're out in the world.
 
-This registers for `http`/`https` so links resolve, without being a browser. No
-address bar, no tabs, no history, no bookmarks, no launcher entry — and links on
-the page don't work. Another app hands it a URL, it renders that URL, and that's
-the end. Every page is a dead end by design.
+Everything else stays: maps, transit, music, podcasts, ebooks, camera, notes,
+messages, banking, tickets. Those are tools — you open them for a reason and
+close them when you're done. What's gone is anything with an infinite feed
+choosing what you see next.
 
-Built for a deliberately distraction-free phone.
+A browser undoes all of that. Every social site is still there at a URL, so
+removing the feed apps accomplishes nothing while a browser is installed. So the
+browsers go too.
+
+That breaks the phone in one specific way: links stop working. A ticket texted to
+you, a QR code on a parking meter, a confirmation from a restaurant — all fail
+with "could not find appropriate application." Android needs *something*
+registered for `http`/`https`.
+
+This is that something. It renders the one page it was handed and goes nowhere:
+no address bar, no tabs, no history, no bookmarks, and links on the page don't
+work. Enough to read a ticket. Not enough to browse.
+
+It does show up in the app list, because an app that handles every link on your
+phone but can't be found anywhere is its own kind of confusing. Opening it that
+way just says so.
 
 ## Install
 
 Use [Obtainium](https://github.com/ImranR98/Obtainium) and point it at this
-repo's releases — it'll handle updates. (Release coming; nothing published yet.)
+repo's releases — it'll handle updates. 
 
-Or build it yourself (needs `podman`, nothing else):
+Or build it yourself, `podman` is the only requirement:
 
 ```bash
 ./build.sh
@@ -28,7 +43,7 @@ adb install -r dist/chrisincode-render.apk
 
 ## Notes
 
-Server redirects are allowed — login walls and captive portals need them.
+Server redirects are allowed, since login walls and captive portals need them.
 Everything else is refused: `intent://` URLs are never parsed, non-web schemes are
 dropped, popups and downloads are off, camera/mic/location are denied without
 asking, bad certificates end the page, and there's no `addJavascriptInterface`

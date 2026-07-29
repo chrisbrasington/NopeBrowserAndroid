@@ -2,6 +2,10 @@
 <resources>
     <string name="app_name">Minimal Web Renderer</string>
 
+    <!-- Shown when the app is opened from the app list instead of by a link. -->
+    <string name="notice_title">Nope, this is not a useful browser.</string>
+    <string name="notice_body">It will render one page from a hyperlink with no navigation.</string>
+
     <string name="blocked_navigation">Navigation blocked</string>
     <string name="blocked_download">Downloads disabled</string>
     <string name="blocked_scheme">Not a web link</string>

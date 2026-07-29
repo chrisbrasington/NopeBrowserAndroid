@@ -20,13 +20,9 @@
             android:launchMode="singleTop">
 
             <!--
-                Link handler only. There is deliberately no MAIN/LAUNCHER filter: with
-                no launcher entry, there is no surface on which to type a URL. To get a
-                home screen icon anyway, add a second intent-filter with
-                action MAIN + category LAUNCHER.
-
-                No android:host, plus CATEGORY_BROWSABLE, is what makes Android treat
-                this as a browser-class handler and offer it for every web link.
+                The link handler. No android:host, plus CATEGORY_BROWSABLE, is what
+                makes Android treat this as a browser-class handler and offer it for
+                every web link.
             -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -36,6 +32,19 @@
 
                 <data android:scheme="http" />
                 <data android:scheme="https" />
+            </intent-filter>
+
+            <!--
+                Appears in the app list. An app that handles every link on the phone but
+                cannot be found anywhere is its own kind of confusing, so it is visible —
+                it just has nothing to offer when opened this way. A MAIN intent carries
+                no data, so RenderActivity shows the notice screen instead of a WebView.
+                There is still no field to type a URL into.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
     </application>
