@@ -7,7 +7,7 @@
         app_name reads too long in a list of icons; it still appears in Settings → Apps
         and in the link chooser.
     -->
-    <string name="app_name_short">NopeBrowser</string>
+    <string name="app_name_short">Nope Browser</string>
 
     <!-- Shown when the app is opened from the app list instead of by a link. -->
     <string name="notice_title">Nope, this is not a useful browser.</string>
