@@ -8,6 +8,7 @@ If you've trimmed down your phone to be distraction-free by removing
 social media apps and bad actors, a browser becomes a sort of 
 backdoor to addiction. And if you remove all browsers from android,
 you might still want to read one article or see one e-ticket delivery page
+(image a QR code at a resturaunt or museum).
 
 This browser does let you a url, but that's it. It blocks navigation.
 And perhaps more importantly, you can compile it with a blacklist of your 
