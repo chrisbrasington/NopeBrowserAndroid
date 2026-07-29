@@ -10,10 +10,11 @@ backdoor to addiction. And if you remove all browsers from android,
 you might still want to read one article or see one e-ticket delivery page
 (image a QR code at a restaurant or museum).
 
-This browser does let you a url, but that's it. It blocks navigation.
-And perhaps more importantly, you can compile it with a blacklist of your 
-own (default blacklist is reddit). It's important that this is at compile
-time because you cannot alter this functionality on the device itself.
+This browser does let you open one hyperlink (there is no nav bar!), but that's it. 
+It blocks navigation. And perhaps more importantly, you can compile it 
+with a blacklist of your own (default blacklist is reddit). 
+It's important that this is at compile time because you cannot alter 
+this functionality on the device itself.
 
 The idea is: it is your job to curate the apps you find acceptable on your
 device and this browser lets you minimally access the internet (say a link
