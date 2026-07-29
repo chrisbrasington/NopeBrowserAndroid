@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Minimal Web Renderer</string>
+
+    <string name="blocked_navigation">Navigation blocked</string>
+    <string name="blocked_download">Downloads disabled</string>
+    <string name="blocked_scheme">Not a web link</string>
+    <string name="blocked_certificate">Certificate rejected</string>
+</resources>

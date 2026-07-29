@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shown behind the status bar and before a page paints. -->
+    <color name="page_background">#FFFFFFFF</color>
+
+    <color name="ic_launcher_background">#FF0F1419</color>
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+        Cleartext is permitted because plain http links still arrive by SMS and
+        captive portals are http-only. Set cleartextTrafficPermitted="false" if you
+        would rather those fail outright.
+
+        Only system certificate authorities are trusted. User-installed CAs are
+        excluded, so a certificate someone talked you into installing cannot be used
+        to read traffic here.
+    -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
