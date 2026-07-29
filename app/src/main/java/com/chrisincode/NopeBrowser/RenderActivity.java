@@ -23,6 +23,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
@@ -37,8 +38,8 @@ import java.util.Locale;
  * is up, it is a dead end: links do not work.
  *
  * <p>The app does appear in the app list, because an invisible app is its own kind
- * of confusing. Opening it that way shows a notice and nothing else — there is no
- * field to type into.
+ * of confusing. Opening it that way shows a notice, counts down, and closes itself —
+ * there is no field to type into and nothing to wait around for.
  */
 public final class RenderActivity extends Activity {
 
@@ -48,14 +49,39 @@ public final class RenderActivity extends Activity {
     /** Blocked navigation attempts allowed per page before the app closes itself. */
     private static final int REFUSAL_LIMIT = 2;
 
+    /** How long the notice screen stays up before the app closes itself. */
+    private static final int NOTICE_SECONDS = 5;
+
+    private static final long ONE_SECOND_MS = 1000L;
+
     /**
      * Long enough for the parting toast to be read. The activity is already gone by
      * then; this delay only holds the process open so the toast survives.
      */
     private static final long QUIT_DELAY_MS = 2000L;
 
+    private final Handler handler = new Handler(Looper.getMainLooper());
+
     private WebView webView;
     private View notice;
+    private TextView countdown;
+
+    private int secondsLeft;
+
+    /** Counts the notice screen down, then closes the app. */
+    private final Runnable tick = new Runnable() {
+        @Override
+        public void run() {
+            if (secondsLeft <= 0) {
+                toast(R.string.notice_closing);
+                quit();
+                return;
+            }
+            countdown.setText(getString(R.string.notice_countdown, secondsLeft));
+            secondsLeft--;
+            handler.postDelayed(this, ONE_SECOND_MS);
+        }
+    };
 
     /** Domains from res/values/blocklist.xml. Subdomains of each are included. */
     private String[] blockedDomains;
@@ -75,6 +101,7 @@ public final class RenderActivity extends Activity {
         blockedDomains = getResources().getStringArray(R.array.blocked_domains);
 
         notice = findViewById(R.id.notice);
+        countdown = findViewById(R.id.countdown);
         webView = findViewById(R.id.webview);
         harden(webView);
         webView.setWebViewClient(new DeadEndClient());
@@ -94,6 +121,10 @@ public final class RenderActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        // Only the countdown — the pending kill from quit() posts to this same handler
+        // and has to outlive the activity.
+        handler.removeCallbacks(tick);
+
         if (webView != null) {
             webView.stopLoading();
             webView.destroy();
@@ -128,6 +159,10 @@ public final class RenderActivity extends Activity {
      * after it is not.
      */
     private void render(Uri target) {
+        // A link arriving while the notice is up cancels the countdown: it came from
+        // somewhere, so there is something to show.
+        handler.removeCallbacks(tick);
+
         refusals = 0;
         notice.setVisibility(View.GONE);
         webView.setVisibility(View.VISIBLE);
@@ -137,6 +172,10 @@ public final class RenderActivity extends Activity {
     private void showNotice() {
         webView.setVisibility(View.GONE);
         notice.setVisibility(View.VISIBLE);
+
+        secondsLeft = NOTICE_SECONDS;
+        handler.removeCallbacks(tick);
+        handler.post(tick);
     }
 
     /**
@@ -190,8 +229,7 @@ public final class RenderActivity extends Activity {
      */
     private void quit() {
         finishAndRemoveTask();
-        new Handler(Looper.getMainLooper())
-                .postDelayed(() -> Process.killProcess(Process.myPid()), QUIT_DELAY_MS);
+        handler.postDelayed(() -> Process.killProcess(Process.myPid()), QUIT_DELAY_MS);
     }
 
     private static boolean isWebUrl(Uri uri) {
