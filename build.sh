@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Build the debug APK in a container (no Android tooling needed on the host).
 # Output:
-#   dist/chrisincode-render.apk
+#   dist/NopeBrowser-<versionName>.apk
 set -euo pipefail
 cd "$(dirname "$0")"
 
 IMAGE=chrisincode-render-build
 KEYSTORE=app/render.keystore
+APK=app/build/outputs/apk/debug/app-debug.apk
 
 echo "==> Building Android SDK image (first run is slow; cached afterwards)…"
 podman build -t "$IMAGE" -f Containerfile .
@@ -31,7 +32,22 @@ echo "==> Assembling debug APK…"
 podman run --rm -v "$PWD":/work:Z -w /work "$IMAGE" \
     gradle --no-daemon assembleDebug
 
+# Read the version out of the APK rather than parsing build.gradle.kts, so the
+# filename cannot disagree with what is actually inside. aapt2 is not on the
+# image's PATH, hence the glob.
+BADGING=$(podman run --rm -v "$PWD":/work:Z -w /work "$IMAGE" \
+    bash -lc "/opt/android-sdk/build-tools/*/aapt2 dump badging $APK | head -1")
+VERSION=$(printf '%s\n' "$BADGING" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")
+
+if [[ -z "$VERSION" ]]; then
+    echo "!! Could not read versionName from $APK" >&2
+    echo "   aapt2 said: $BADGING" >&2
+    exit 1
+fi
+
+OUT="dist/NopeBrowser-${VERSION}.apk"
 mkdir -p dist
-cp app/build/outputs/apk/debug/app-debug.apk dist/chrisincode-render.apk
-echo "==> Done: dist/chrisincode-render.apk"
-echo "    adb install -r dist/chrisincode-render.apk"
+cp "$APK" "$OUT"
+
+echo "==> Done: $OUT"
+echo "    adb install -r $OUT"

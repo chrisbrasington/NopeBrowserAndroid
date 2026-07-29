@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.chrisincode.render"
+    namespace = "com.chrisincode.NopeBrowser"
     compileSdk = 35
 
     // Pinned to what the build image already contains. Left unset, AGP 8.7 asks for
@@ -14,8 +14,8 @@ android {
         applicationId = "com.chrisincode.render"
         minSdk = 29
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
     }
 
     // Stable, checked-in signing key so every rebuild (on any machine) signs

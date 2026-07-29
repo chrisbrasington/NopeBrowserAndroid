@@ -35,7 +35,7 @@ Or build it — `podman` is the only requirement:
 
 ```bash
 ./build.sh
-adb install -r dist/chrisincode-render.apk
+adb install -r dist/NopeBrowser-1.1.apk
 ```
 
 ## Notes

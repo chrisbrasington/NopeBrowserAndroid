@@ -13,10 +13,10 @@
         android:theme="@style/Theme.Render">
 
         <activity
-            android:name=".RenderActivity"
+            android:name="com.chrisincode.NopeBrowser.RenderActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|density"
             android:exported="true"
-            android:label="@string/app_name"
+            android:label="@string/app_name_short"
             android:launchMode="singleTop">
 
             <!--

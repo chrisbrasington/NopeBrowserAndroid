@@ -1,4 +1,4 @@
-package com.chrisincode.render;
+package com.chrisincode.NopeBrowser;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -6,7 +6,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
+import android.os.Process;
 import android.view.View;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JsPromptResult;
@@ -42,11 +45,27 @@ public final class RenderActivity extends Activity {
     /** Schemes a page is allowed to pull subresources from. */
     private static final String[] SUBRESOURCE_SCHEMES = {"http", "https", "data", "blob", "about"};
 
+    /** Blocked navigation attempts allowed per page before the app closes itself. */
+    private static final int REFUSAL_LIMIT = 2;
+
+    /**
+     * Long enough for the parting toast to be read. The activity is already gone by
+     * then; this delay only holds the process open so the toast survives.
+     */
+    private static final long QUIT_DELAY_MS = 2000L;
+
     private WebView webView;
     private View notice;
 
     /** Domains from res/values/blocklist.xml. Subdomains of each are included. */
     private String[] blockedDomains;
+
+    /**
+     * Blocked navigation attempts on the page currently loaded. Reset by every
+     * {@link #render}, so the count is per page rather than per session — and a fresh
+     * launch is a fresh process, which starts it at zero anyway.
+     */
+    private int refusals;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,6 +128,7 @@ public final class RenderActivity extends Activity {
      * after it is not.
      */
     private void render(Uri target) {
+        refusals = 0;
         notice.setVisibility(View.GONE);
         webView.setVisibility(View.VISIBLE);
         webView.loadUrl(target.toString());
@@ -147,6 +167,31 @@ public final class RenderActivity extends Activity {
     private void nope() {
         toast(R.string.blocked_domain);
         finish();
+    }
+
+    /**
+     * Refuses a navigation attempt. The first one on a page is a warning; the second
+     * closes the app. Tapping links on a dead-end page is the beginning of browsing,
+     * and this is the cheapest way to end it.
+     */
+    private void refuseNavigation() {
+        refusals++;
+        if (refusals >= REFUSAL_LIMIT) {
+            toast(R.string.blocked_navigation_final);
+            quit();
+            return;
+        }
+        toast(R.string.blocked_navigation);
+    }
+
+    /**
+     * Drops the task from recents, then ends the process once the toast has had time
+     * to be read — cookies, page state and the WebView renderer all go with it.
+     */
+    private void quit() {
+        finishAndRemoveTask();
+        new Handler(Looper.getMainLooper())
+                .postDelayed(() -> Process.killProcess(Process.myPid()), QUIT_DELAY_MS);
     }
 
     private static boolean isWebUrl(Uri uri) {
@@ -226,7 +271,7 @@ public final class RenderActivity extends Activity {
             }
 
             // A tapped link, a submitted form, a script assigning location. No.
-            toast(R.string.blocked_navigation);
+            refuseNavigation();
             return true;
         }
 
