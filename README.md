@@ -4,20 +4,19 @@ Renders one page from a hyperlink. No navigation.
 
 ## Why
 
-A phone with no algorithmic feeds that still works out in the world.
+If you've trimmed down your phone to be distraction-free by removing 
+social media apps and bad actors, a browser becomes a sort of 
+backdoor to addiction. And if you remove all browsers from android,
+you might still want to read one article or see one e-ticket delivery page
 
-Maps, transit, music, podcasts, ebooks, camera, notes, messages, banking,
-tickets — all fine. Tools you open for a reason and close. Feeds, no.
+This browser does let you a url, but that's it. It blocks navigation.
+And perhaps more importantly, you can compile it with a blacklist of your 
+own (default blacklist is reddit). It's important that this is at compile
+time because you cannot alter this functionality on the device itself.
 
-A browser puts every feed back one URL away, so the browsers go too. That breaks
-links: texted tickets, QR codes, confirmations all fail with "could not find
-appropriate application."
-
-This registers for `http`/`https` so they work. It renders the page it was handed
-and goes nowhere — no address bar, tabs, history, or working links. Enough to read
-a ticket. Not enough to browse.
-
-It shows in the app list, and says so if you open it.
+The idea is: it is your job to curate the apps you find acceptable on your
+device and this browser lets you minimally access the internet (say a link
+from a friend) with a level you control.
 
 ## Blocklist
 
