@@ -45,10 +45,15 @@ public final class RenderActivity extends Activity {
     private WebView webView;
     private View notice;
 
+    /** Domains from res/values/blocklist.xml. Subdomains of each are included. */
+    private String[] blockedDomains;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_render);
+
+        blockedDomains = getResources().getStringArray(R.array.blocked_domains);
 
         notice = findViewById(R.id.notice);
         webView = findViewById(R.id.webview);
@@ -82,6 +87,10 @@ public final class RenderActivity extends Activity {
         Uri target = intent == null ? null : intent.getData();
 
         if (isWebUrl(target)) {
+            if (isBlocked(target)) {
+                nope();
+                return;
+            }
             render(target);
         } else if (intent != null && Intent.ACTION_VIEW.equals(intent.getAction())) {
             // Something sent us a link we will not touch: a custom app scheme, a
@@ -108,6 +117,36 @@ public final class RenderActivity extends Activity {
     private void showNotice() {
         webView.setVisibility(View.GONE);
         notice.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * True if the host is a blocked domain or any subdomain of one. Matching on
+     * "." + domain is what makes old.reddit.com fall under reddit.com without also
+     * catching something like notreddit.com.
+     */
+    private boolean isBlocked(Uri uri) {
+        String host = uri.getHost();
+        if (host == null) {
+            return false;
+        }
+        host = host.toLowerCase(Locale.US);
+
+        for (String entry : blockedDomains) {
+            String domain = entry.trim().toLowerCase(Locale.US);
+            if (domain.isEmpty()) {
+                continue;
+            }
+            if (host.equals(domain) || host.endsWith("." + domain)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Says so, then gets out of the way. Nothing is rendered. */
+    private void nope() {
+        toast(R.string.blocked_domain);
+        finish();
     }
 
     private static boolean isWebUrl(Uri uri) {
@@ -176,6 +215,13 @@ public final class RenderActivity extends Activity {
                 // A 3xx from the server is the site answering the request we already
                 // made, not the user going somewhere new. http->https upgrades,
                 // captive portals and login walls all need this to work.
+                //
+                // Re-checked against the blocklist because a shortener is a redirect:
+                // without this, a t.co link lands on a blocked domain anyway.
+                if (isBlocked(request.getUrl())) {
+                    nope();
+                    return true;
+                }
                 return false;
             }
 

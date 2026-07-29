@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Domains this app refuses to open. This is the file to edit.
+
+    One <item> per domain. No scheme, no "www." — subdomains are covered
+    automatically, so "reddit.com" also blocks www.reddit.com, old.reddit.com,
+    m.reddit.com and np.reddit.com.
+
+    Sibling domains are separate names and are not covered: reddit.com does not
+    block redd.it. Add those as their own items.
+
+    Takes effect on the next ./build.sh — there is no in-app editor.
+-->
+<resources>
+    <string-array name="blocked_domains">
+        <item>reddit.com</item>
+    </string-array>
+</resources>

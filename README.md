@@ -1,40 +1,36 @@
-# Minimal Web Renderer
+# NopeBrowser (Minimal Web Renderer)
 
-A WebView that renders one page from a hyperlink, with no navigation.
+Renders one page from a hyperlink. No navigation.
 
 ## Why
 
-The goal is a phone with no access to algorithmic feeds, that still works when
-you're out in the world.
+A phone with no algorithmic feeds that still works out in the world.
 
-Everything else stays: maps, transit, music, podcasts, ebooks, camera, notes,
-messages, banking, tickets. Those are tools — you open them for a reason and
-close them when you're done. What's gone is anything with an infinite feed
-choosing what you see next.
+Maps, transit, music, podcasts, ebooks, camera, notes, messages, banking,
+tickets — all fine. Tools you open for a reason and close. Feeds, no.
 
-A browser undoes all of that. Every social site is still there at a URL, so
-removing the feed apps accomplishes nothing while a browser is installed. So the
-browsers go too.
+A browser puts every feed back one URL away, so the browsers go too. That breaks
+links: texted tickets, QR codes, confirmations all fail with "could not find
+appropriate application."
 
-That breaks the phone in one specific way: links stop working. A ticket texted to
-you, a QR code on a parking meter, a confirmation from a restaurant — all fail
-with "could not find appropriate application." Android needs *something*
-registered for `http`/`https`.
+This registers for `http`/`https` so they work. It renders the page it was handed
+and goes nowhere — no address bar, tabs, history, or working links. Enough to read
+a ticket. Not enough to browse.
 
-This is that something. It renders the one page it was handed and goes nowhere:
-no address bar, no tabs, no history, no bookmarks, and links on the page don't
-work. Enough to read a ticket. Not enough to browse.
+It shows in the app list, and says so if you open it.
 
-It does show up in the app list, because an app that handles every link on your
-phone but can't be found anywhere is its own kind of confusing. Opening it that
-way just says so.
+## Blocklist
+
+`app/src/main/res/values/blocklist.xml` — one domain per line, subdomains
+included. Links to anything on it get a "Nope" toast and don't open. Ships with
+`reddit.com`.
 
 ## Install
 
-Use [Obtainium](https://github.com/ImranR98/Obtainium) and point it at this
-repo's releases — it'll handle updates. 
+[Obtainium](https://github.com/ImranR98/Obtainium), pointed at this repo's
+releases.
 
-Or build it yourself, `podman` is the only requirement:
+Or build it — `podman` is the only requirement:
 
 ```bash
 ./build.sh
@@ -43,10 +39,9 @@ adb install -r dist/chrisincode-render.apk
 
 ## Notes
 
-Server redirects are allowed, since login walls and captive portals need them.
-Everything else is refused: `intent://` URLs are never parsed, non-web schemes are
-dropped, popups and downloads are off, camera/mic/location are denied without
-asking, bad certificates end the page, and there's no `addJavascriptInterface`
-anywhere. JavaScript is on, because otherwise most pages are blank.
+Server redirects are allowed; login walls and captive portals need them.
+Otherwise: `intent://` never parsed, non-web schemes dropped, no popups or
+downloads, camera/mic/location denied, bad certificates end the page, no
+`addJavascriptInterface`. JavaScript is on, or most pages are blank.
 
 Apache-2.0.
