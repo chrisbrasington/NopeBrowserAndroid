@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+app/build/
+local.properties
+
+# Build output
+dist/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.cxx/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keys — app/render.keystore is checked in ON PURPOSE (throwaway sideloading key,
+# see the comment in app/build.gradle.kts). Any other keystore is not.
+*.jks
+*.p12
+keystore.properties
