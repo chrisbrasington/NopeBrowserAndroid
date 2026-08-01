@@ -3,6 +3,7 @@ package com.chrisincode.NopeBrowser;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
@@ -11,6 +12,9 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.JsPromptResult;
 import android.webkit.JsResult;
@@ -23,6 +27,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,13 +38,20 @@ import java.util.Locale;
  * Renders exactly one URL — the one handed to us by another app — and refuses
  * everything else.
  *
- * <p>There is no address bar, no history and no tabs. The only way to get a page on
- * screen is for something else to fire an ACTION_VIEW intent at us. Once that page
- * is up, it is a dead end: links do not work.
+ * <p>There is no history and no tabs. The only way to get a page on screen is for
+ * something else to fire an ACTION_VIEW intent at us. Once that page is up, it is a
+ * dead end: links do not work.
+ *
+ * <p>The exception is the whitelist. On a page whose host is on it, an address bar
+ * appears and links work — that is a set of domains the owner of the phone has
+ * decided they trust themselves with. The moment a navigation leaves the whitelist
+ * the address bar goes away and the dead end is back, so wandering off costs you
+ * one page and ends there.
  *
  * <p>The app does appear in the app list, because an invisible app is its own kind
- * of confusing. Opening it that way shows a notice, counts down, and closes itself —
- * there is no field to type into and nothing to wait around for.
+ * of confusing. Opening it that way shows a notice, counts down, and closes itself.
+ * The notice lists the whitelisted domains, and that list is the only thing on the
+ * screen that goes anywhere — there is still no field to type a URL into.
  */
 public final class RenderActivity extends Activity {
 
@@ -63,7 +75,12 @@ public final class RenderActivity extends Activity {
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     private WebView webView;
+    private View browser;
+    private View addressBar;
+    private EditText address;
     private View notice;
+    private View whitelistTitle;
+    private ViewGroup whitelistLinks;
     private TextView countdown;
 
     private int secondsLeft;
@@ -87,6 +104,21 @@ public final class RenderActivity extends Activity {
     private String[] blockedDomains;
 
     /**
+     * Domains from res/values/whitelist.xml, or from $NOPE_WHITELIST at build time.
+     * Subdomains of each are included. Empty by default, which leaves the app exactly
+     * as it was before whitelisting existed.
+     */
+    private String[] whitelistedDomains;
+
+    /**
+     * True while the page on screen is on the whitelist. Everything the address bar
+     * and {@link DeadEndClient} do differently hangs off this one flag, and
+     * {@link #syncChrome} is the only thing that sets it — from the URL the WebView
+     * actually started loading, so a redirect cannot leave it stale.
+     */
+    private boolean onWhitelistedPage;
+
+    /**
      * Blocked navigation attempts on the page currently loaded. Reset by every
      * {@link #render}, so the count is per page rather than per session — and a fresh
      * launch is a fresh process, which starts it at zero anyway.
@@ -99,9 +131,23 @@ public final class RenderActivity extends Activity {
         setContentView(R.layout.activity_render);
 
         blockedDomains = getResources().getStringArray(R.array.blocked_domains);
+        whitelistedDomains = getResources().getStringArray(R.array.whitelisted_domains);
 
         notice = findViewById(R.id.notice);
+        whitelistTitle = findViewById(R.id.whitelist_title);
+        whitelistLinks = findViewById(R.id.whitelist_links);
         countdown = findViewById(R.id.countdown);
+        browser = findViewById(R.id.browser);
+        addressBar = findViewById(R.id.address_bar);
+        address = findViewById(R.id.address);
+        address.setOnEditorActionListener((view, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE) {
+                go();
+                return true;
+            }
+            return false;
+        });
+
         webView = findViewById(R.id.webview);
         harden(webView);
         webView.setWebViewClient(new DeadEndClient());
@@ -165,13 +211,19 @@ public final class RenderActivity extends Activity {
 
         refusals = 0;
         notice.setVisibility(View.GONE);
-        webView.setVisibility(View.VISIBLE);
+        browser.setVisibility(View.VISIBLE);
+
+        // Also done in onPageStarted; doing it here too means the bar does not sit
+        // there for the length of a page load after we have already left the
+        // whitelist, and does not flash in on the way to a page that never was.
+        syncChrome(target.toString());
         webView.loadUrl(target.toString());
     }
 
     private void showNotice() {
-        webView.setVisibility(View.GONE);
+        browser.setVisibility(View.GONE);
         notice.setVisibility(View.VISIBLE);
+        listWhitelist();
 
         secondsLeft = NOTICE_SECONDS;
         handler.removeCallbacks(tick);
@@ -179,18 +231,125 @@ public final class RenderActivity extends Activity {
     }
 
     /**
-     * True if the host is a blocked domain or any subdomain of one. Matching on
-     * "." + domain is what makes old.reddit.com fall under reddit.com without also
+     * Puts the whitelisted domains on the notice screen as tappable rows. They are
+     * the only thing here worth going to, so this is the one way into the app that
+     * does not start with a link from somewhere else.
+     *
+     * <p>The countdown is not paused for them. Ignore the list and the app still
+     * closes on schedule; tapping one cancels it by way of {@link #render}.
+     */
+    private void listWhitelist() {
+        whitelistLinks.removeAllViews();
+
+        for (String entry : whitelistedDomains) {
+            String domain = entry.trim();
+            if (domain.isEmpty()) {
+                continue;
+            }
+
+            Uri target = Uri.parse("https://" + domain);
+            if (isBlocked(target)) {
+                // In both files. The blocklist wins, so do not offer it.
+                continue;
+            }
+
+            TextView link = (TextView) getLayoutInflater()
+                    .inflate(R.layout.whitelist_link, whitelistLinks, false);
+            link.setText(domain);
+            link.setOnClickListener(view -> render(target));
+            whitelistLinks.addView(link);
+        }
+
+        int visibility = whitelistLinks.getChildCount() > 0 ? View.VISIBLE : View.GONE;
+        whitelistTitle.setVisibility(visibility);
+        whitelistLinks.setVisibility(visibility);
+    }
+
+    /**
+     * Shows or hides the address bar to match the page being loaded, and records
+     * which side of the whitelist we are on.
+     */
+    private void syncChrome(String url) {
+        onWhitelistedPage = matches(Uri.parse(url), whitelistedDomains);
+
+        addressBar.setVisibility(onWhitelistedPage ? View.VISIBLE : View.GONE);
+        if (onWhitelistedPage) {
+            // Not while it has focus — that would rewrite what is being typed.
+            if (!address.hasFocus()) {
+                address.setText(url);
+            }
+        } else {
+            address.setText("");
+            address.clearFocus();
+            hideKeyboard();
+        }
+    }
+
+    /** Follows whatever is in the address bar. */
+    private void go() {
+        String typed = address.getText().toString().trim();
+        if (typed.isEmpty()) {
+            return;
+        }
+
+        Uri target = Uri.parse(typed);
+        if (target.getScheme() == null) {
+            // "example.com/page" is what people type. Assume the good scheme.
+            target = Uri.parse("https://" + typed);
+        }
+
+        if (!isWebUrl(target) || target.getHost() == null) {
+            toast(R.string.blocked_scheme);
+            return;
+        }
+        if (isBlocked(target)) {
+            nope();
+            return;
+        }
+
+        address.clearFocus();
+        hideKeyboard();
+
+        // Off-whitelist is allowed and deliberate: it renders once and dead-ends,
+        // same as a link tapped on a whitelisted page.
+        render(target);
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager keyboard = getSystemService(InputMethodManager.class);
+        if (keyboard != null) {
+            keyboard.hideSoftInputFromWindow(address.getWindowToken(), 0);
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        // History only exists inside the whitelist. On a dead-end page back is what
+        // it always was: the way out of the app.
+        if (onWhitelistedPage && webView != null && webView.canGoBack()) {
+            webView.goBack();
+            return;
+        }
+        super.onBackPressed();
+    }
+
+    private boolean isBlocked(Uri uri) {
+        return matches(uri, blockedDomains);
+    }
+
+    /**
+     * True if the URI's host is one of the domains or any subdomain of one. Matching
+     * on "." + domain is what makes old.reddit.com fall under reddit.com without also
      * catching something like notreddit.com.
      */
-    private boolean isBlocked(Uri uri) {
+    private static boolean matches(Uri uri, String[] domains) {
         String host = uri.getHost();
         if (host == null) {
             return false;
         }
         host = host.toLowerCase(Locale.US);
 
-        for (String entry : blockedDomains) {
+        for (String entry : domains) {
             String domain = entry.trim().toLowerCase(Locale.US);
             if (domain.isEmpty()) {
                 continue;
@@ -283,7 +442,9 @@ public final class RenderActivity extends Activity {
     }
 
     /**
-     * Lets the first page in and nothing else out.
+     * Lets the first page in and nothing else out — unless the page is whitelisted,
+     * in which case it lets everything through and hands the next page whatever the
+     * whitelist says about it.
      */
     private final class DeadEndClient extends WebViewClient {
 
@@ -308,9 +469,33 @@ public final class RenderActivity extends Activity {
                 return false;
             }
 
+            if (onWhitelistedPage) {
+                // Browsing, for as long as it stays on the whitelist. A link that
+                // leaves it is still followed — once — and onPageStarted takes the
+                // address bar away on arrival, so the page it lands on is a dead end.
+                if (isBlocked(request.getUrl())) {
+                    nope();
+                    return true;
+                }
+                return false;
+            }
+
             // A tapped link, a submitted form, a script assigning location. No.
             refuseNavigation();
             return true;
+        }
+
+        /**
+         * Fires for every page that actually loads, however it got here: the launch
+         * intent, a link inside the whitelist, a redirect, the address bar, back. That
+         * makes it the one honest place to decide whether the page on screen is
+         * whitelisted.
+         */
+        @Override
+        public void onPageStarted(WebView view, String url, Bitmap favicon) {
+            // A page that loaded is a fresh start; the two strikes are per page.
+            refusals = 0;
+            syncChrome(url);
         }
 
         /**

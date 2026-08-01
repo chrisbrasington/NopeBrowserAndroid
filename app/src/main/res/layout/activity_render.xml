@@ -2,14 +2,16 @@
 <!--
     Two states, one of which is revealed in onCreate:
 
-      webview  a link handed to us by another app
+      browser  a link handed to us by another app
       notice   opened from the app list, where there is nothing to render
 
-    No toolbar, no progress bar, no URL strip — so there is no leftover band of
-    empty space where an address bar would sit. fitsSystemWindows keeps content out
-    from under the status bar without reserving anything else.
+    Inside the browser state the address bar is a third toggle, and it is hidden
+    unless the page on screen is on the whitelist. Off the whitelist there is no
+    toolbar, no progress bar and no URL strip — so there is no leftover band of
+    empty space where an address bar would sit. fitsSystemWindows keeps content
+    out from under the status bar without reserving anything else.
 
-    Both start hidden so neither flashes before we know which one applies.
+    Both states start hidden so neither flashes before we know which one applies.
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root"
@@ -18,11 +20,52 @@
     android:background="@color/page_background"
     android:fitsSystemWindows="true">
 
-    <WebView
-        android:id="@+id/webview"
+    <LinearLayout
+        android:id="@+id/browser"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone" />
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/address_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/chrome_background"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <EditText
+                android:id="@+id/address"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:hint="@string/address_hint"
+                android:imeOptions="actionGo|flagNoExtractUi"
+                android:importantForAutofill="no"
+                android:inputType="textUri|textNoSuggestions"
+                android:maxLines="1"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="12dp"
+                android:selectAllOnFocus="true"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textColorHint="?android:attr/textColorSecondary"
+                android:textSize="14sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/chrome_divider" />
+
+        </LinearLayout>
+
+        <WebView
+            android:id="@+id/webview"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/notice"
@@ -57,6 +100,29 @@
             android:text="@string/notice_body"
             android:textColor="?android:attr/textColorSecondary"
             android:textSize="15sp" />
+
+        <!--
+            The whitelisted domains, as tappable rows. Filled in from code and both
+            hidden unless there is at least one, so an empty whitelist leaves the
+            notice screen exactly as it was.
+        -->
+        <TextView
+            android:id="@+id/whitelist_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:text="@string/notice_whitelist_title"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/whitelist_links"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical"
+            android:visibility="gone" />
 
         <!-- Text is set from code; the placeholder here is only for layout preview. -->
         <TextView

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Sample whitelist. Domains you trust yourself with.
+
+    On a whitelisted page the app stops being a dead end: an address bar appears
+    and links work, across the domain and all its subdomains. Step outside the
+    list and the normal behaviour returns — that page renders once, and then
+    nothing on it goes anywhere.
+
+    The blocklist still wins. A domain in both files is blocked.
+
+    One <item> per domain, same rules as blocklist.xml: no scheme, no "www.",
+    subdomains included, sibling domains are separate names.
+
+    The real build usually does not use this file. Set NOPE_WHITELIST to a
+    comma-separated list and it replaces everything here:
+
+        NOPE_WHITELIST="example.com,example.org" ./build.sh
+
+    Leave the array empty to get the original no-address-bar app back.
+-->
+<resources>
+    <string-array name="whitelisted_domains">
+        <item>chrisincode.com</item>
+    </string-array>
+</resources>

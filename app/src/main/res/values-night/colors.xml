@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="page_background">#FF0F1419</color>
+
+    <color name="chrome_background">#FF171E26</color>
+    <color name="chrome_divider">#22FFFFFF</color>
 </resources>

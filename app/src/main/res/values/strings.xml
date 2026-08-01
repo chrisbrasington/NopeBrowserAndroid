@@ -13,10 +13,17 @@
     <string name="notice_title">Nope, this is not a useful browser.</string>
     <string name="notice_body">It will render one page from a hyperlink with no navigation.</string>
     <string name="notice_countdown">Closing in %1$d…</string>
+
+    <!-- Heads the list of whitelisted domains, which is only shown if there are any. -->
+    <string name="notice_whitelist_title">Except these:</string>
+
     <string name="notice_closing">Live your life</string>
 
     <!-- Shown when a link points at something in res/values/blocklist.xml. -->
     <string name="blocked_domain">Nope</string>
+
+    <!-- The address bar, which only exists on a whitelisted page. -->
+    <string name="address_hint">Type a URL</string>
 
     <!-- First refusal per page, then the second one, which also ends the process. -->
     <string name="blocked_navigation">Nope, Navigation Blocked</string>

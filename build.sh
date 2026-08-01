@@ -28,8 +28,12 @@ if [[ ! -f "$KEYSTORE" ]]; then
             -dname "CN=Minimal Web Renderer, O=chrisincode.com, C=US"
 fi
 
+# NOPE_WHITELIST replaces the sample whitelist in res/values/whitelist.xml — see
+# the comment at the top of app/build.gradle.kts. A container inherits nothing,
+# so it has to be handed over explicitly; empty means "use the sample".
 echo "==> Assembling debug APK…"
-podman run --rm -v "$PWD":/work:Z -w /work "$IMAGE" \
+podman run --rm -v "$PWD":/work:Z -w /work \
+    -e NOPE_WHITELIST="${NOPE_WHITELIST:-}" "$IMAGE" \
     gradle --no-daemon assembleDebug
 
 # Read the version out of the APK rather than parsing build.gradle.kts, so the

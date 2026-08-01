@@ -3,5 +3,9 @@
     <!-- Shown behind the status bar and before a page paints. -->
     <color name="page_background">#FFFFFFFF</color>
 
+    <!-- The address bar, shown only on whitelisted pages. -->
+    <color name="chrome_background">#FFF2F3F5</color>
+    <color name="chrome_divider">#22000000</color>
+
     <color name="ic_launcher_background">#FF0F1419</color>
 </resources>
