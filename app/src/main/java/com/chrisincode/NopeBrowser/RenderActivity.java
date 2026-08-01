@@ -44,9 +44,11 @@ import java.util.Locale;
  *
  * <p>The exception is the whitelist. On a page whose host is on it, an address bar
  * appears and links work — that is a set of domains the owner of the phone has
- * decided they trust themselves with. The moment a navigation leaves the whitelist
- * the address bar goes away and the dead end is back, so wandering off costs you
- * one page and ends there.
+ * decided they trust themselves with. A link that leaves the whitelist is still
+ * followed, once, and the page it lands on is a dead end like any other. The
+ * address bar is stricter than that: typing anything off the whitelist into it
+ * closes the app rather than rendering, because a bar that hands out one page per
+ * attempt is a browser with extra steps.
  *
  * <p>The app does appear in the app list, because an invisible app is its own kind
  * of confusing. Opening it that way shows a notice, counts down, and closes itself.
@@ -270,7 +272,7 @@ public final class RenderActivity extends Activity {
      * which side of the whitelist we are on.
      */
     private void syncChrome(String url) {
-        onWhitelistedPage = matches(Uri.parse(url), whitelistedDomains);
+        onWhitelistedPage = isWhitelisted(Uri.parse(url));
 
         addressBar.setVisibility(onWhitelistedPage ? View.VISIBLE : View.GONE);
         if (onWhitelistedPage) {
@@ -285,7 +287,15 @@ public final class RenderActivity extends Activity {
         }
     }
 
-    /** Follows whatever is in the address bar. */
+    /**
+     * Follows whatever is in the address bar, which had better be on the whitelist.
+     *
+     * <p>Anything else ends the session. Rendering it once — the way a tapped link is
+     * treated — would make the address bar a loophole rather than a convenience: type,
+     * read a page, relaunch, type again. One page per attempt at unlimited attempts is
+     * not a restriction. So the bar moves you around inside the whitelist and does
+     * nothing else at all.
+     */
     private void go() {
         String typed = address.getText().toString().trim();
         if (typed.isEmpty()) {
@@ -298,20 +308,18 @@ public final class RenderActivity extends Activity {
             target = Uri.parse("https://" + typed);
         }
 
-        if (!isWebUrl(target) || target.getHost() == null) {
-            toast(R.string.blocked_scheme);
-            return;
-        }
-        if (isBlocked(target)) {
-            nope();
-            return;
-        }
-
         address.clearFocus();
         hideKeyboard();
 
-        // Off-whitelist is allowed and deliberate: it renders once and dead-ends,
-        // same as a link tapped on a whitelisted page.
+        // Blocked, off-whitelist, not a web URL, or a typo — all the same answer. A
+        // typo costing a relaunch is the price of there being no way to argue with
+        // this check.
+        if (!isWebUrl(target) || !isWhitelisted(target) || isBlocked(target)) {
+            toast(R.string.blocked_typed);
+            quit();
+            return;
+        }
+
         render(target);
     }
 
@@ -335,6 +343,10 @@ public final class RenderActivity extends Activity {
 
     private boolean isBlocked(Uri uri) {
         return matches(uri, blockedDomains);
+    }
+
+    private boolean isWhitelisted(Uri uri) {
+        return matches(uri, whitelistedDomains);
     }
 
     /**

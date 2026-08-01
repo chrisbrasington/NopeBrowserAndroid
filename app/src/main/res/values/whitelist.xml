@@ -3,9 +3,13 @@
     Sample whitelist. Domains you trust yourself with.
 
     On a whitelisted page the app stops being a dead end: an address bar appears
-    and links work, across the domain and all its subdomains. Step outside the
-    list and the normal behaviour returns — that page renders once, and then
+    and links work, across the domain and all its subdomains. Follow a link off
+    the list and the normal behaviour returns — that page renders once, and then
     nothing on it goes anywhere.
+
+    Typing an off-list URL into the address bar does not get that one page. It
+    closes the app instead, or the bar would be a way to read anything on the
+    web one page at a time.
 
     The blocklist still wins. A domain in both files is blocked.
 

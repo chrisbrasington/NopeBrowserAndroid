@@ -28,6 +28,9 @@
     <!-- First refusal per page, then the second one, which also ends the process. -->
     <string name="blocked_navigation">Nope, Navigation Blocked</string>
     <string name="blocked_navigation_final">Nope, I meant it!</string>
+    <!-- Typing an off-whitelist URL into the address bar. Also ends the process. -->
+    <string name="blocked_typed">Nope, nice try</string>
+
     <string name="blocked_download">Downloads disabled</string>
     <string name="blocked_scheme">Not a web link</string>
     <string name="blocked_certificate">Certificate rejected</string>

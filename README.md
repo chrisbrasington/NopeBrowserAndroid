@@ -33,9 +33,15 @@ included. Links to anything on it get a "Nope" toast and don't open. Ships with
 The other end of the same idea: domains you trust yourself with. On a whitelisted
 page an address bar appears and links work, across the domain and its subdomains.
 
-Leave the whitelist and the normal behaviour comes back — that page renders once,
-the address bar disappears, and nothing on it goes anywhere. One step out costs
-one page. Typing an off-whitelist URL into the address bar does the same thing.
+Follow a link off the whitelist and the normal behaviour comes back — that page
+renders once, the address bar disappears, and nothing on it goes anywhere. One
+step out costs one page.
+
+The address bar is stricter. Type anything not on the whitelist and the app says
+"Nope, nice try" and closes. It won't render it. One page per attempt, with
+unlimited attempts, isn't a restriction — it's a browser with extra steps. The bar
+moves you around inside the whitelist and does nothing else.
+
 The blocklist still wins over everything.
 
 Opening the app from the app list lists the whitelisted domains as links. Tap one
